@@ -1,0 +1,5 @@
+config FB_ITOPLCD4_3
+	bool "Config a Lcd driver For itop4412_4.3inch"
+	default y
+	---help---
+	  Jc add itop4412_4.3inch driver in 2020/5/24
