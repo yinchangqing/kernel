@@ -102,7 +102,7 @@ static int power_probe(struct platform_device *pdev)
 	int ret;
 
 	struct device_node *np = pdev->dev.of_node;
-#if 0
+
 	POWER_GPIO = of_get_named_gpio(np, "gpios", 0);
 	if (POWER_GPIO == -EPROBE_DEFER)
                 return POWER_GPIO;
@@ -117,8 +117,7 @@ static int power_probe(struct platform_device *pdev)
                 return ret;
         }
 
-	gpio_direction_output(POWER_GPIO, 0);
-#endif
+	gpio_direction_output(POWER_GPIO, 1);
 	
 	LVDS_GPIO = of_get_named_gpio(np, "gpios", 1);
 	if (LVDS_GPIO == -EPROBE_DEFER)

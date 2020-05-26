@@ -908,7 +908,7 @@ static const struct samsung_gate_clock exynos4_gate_clks[] __initconst = {
 	GATE(CLK_SCLK_CSIS1, "sclk_csis1", "div_csis1", SRC_MASK_CAM, 28,
 			CLK_SET_RATE_PARENT, 0),
 	GATE(CLK_SCLK_FIMD0, "sclk_fimd0", "div_fimd0", SRC_MASK_LCD0, 0,
-			CLK_SET_RATE_PARENT, 0),
+			CLK_SET_RATE_PARENT, 1),
 	GATE(CLK_SCLK_MMC0, "sclk_mmc0", "div_mmc_pre0", SRC_MASK_FSYS, 0,
 			CLK_SET_RATE_PARENT, 0),
 	GATE(CLK_SCLK_MMC1, "sclk_mmc1", "div_mmc_pre1", SRC_MASK_FSYS, 4,
@@ -973,7 +973,7 @@ static const struct samsung_gate_clock exynos4_gate_clks[] __initconst = {
 	GATE(CLK_PPMUMFC_L, "ppmumfc_l", "aclk100", GATE_IP_MFC, 3, 0, 0),
 	GATE(CLK_PPMUMFC_R, "ppmumfc_r", "aclk100", GATE_IP_MFC, 4, 0, 0),
 	GATE(CLK_FIMD0, "fimd0", "aclk160", GATE_IP_LCD0, 0,
-			0, 0),
+			0, 1),
 	GATE(CLK_SMMU_FIMD0, "smmu_fimd0", "aclk160", GATE_IP_LCD0, 4,
 			0, 0),
 	GATE(CLK_PPMULCD0, "ppmulcd0", "aclk160", GATE_IP_LCD0, 5, 0, 0),
@@ -1431,6 +1431,11 @@ static const struct exynos_cpuclk_cfg_data e4412_armclk_d[] __initconst = {
 static void __init exynos4_clk_init(struct device_node *np,
 				    enum exynos4_soc soc)
 {
+	int ret;
+    struct clk *mout_mpll_user_t 	= NULL;
+	struct clk *mount_fimd0 	= NULL;
+	struct clk *sclk_fimd0  	= NULL;
+
 	struct samsung_clk_provider *ctx;
 	exynos4_soc = soc;
 
@@ -1543,6 +1548,49 @@ static void __init exynos4_clk_init(struct device_node *np,
 		_get_rate("sclk_apll"),	_get_rate("sclk_mpll"),
 		_get_rate("sclk_epll"), _get_rate("sclk_vpll"),
 		_get_rate("div_core2"));
+
+/*
+		Jc edit
+*/
+    /* Frequency up to 800Mhz */
+	/* code start... */
+    	pr_info("%s %s %d\n",__FILE__,__FUNCTION__,__LINE__);
+	mout_mpll_user_t = __clk_lookup("mout_mpll_user_t");
+	if (IS_ERR(mout_mpll_user_t)) {
+		pr_info("failed to get mout_mpll_user_t clock\n");
+		return;
+	}
+	pr_info("%s %s %d\n",__FILE__,__FUNCTION__,__LINE__);
+	mount_fimd0 = __clk_lookup("mout_fimd0");
+	if (IS_ERR(mount_fimd0)) {
+		pr_info("failed to get mout_fimd0 clock\n");
+		return ;
+	}
+	pr_info("%s %s %d\n",__FILE__,__FUNCTION__,__LINE__);
+	sclk_fimd0 = __clk_lookup("sclk_fimd0");
+	if (IS_ERR(sclk_fimd0)) {
+		pr_info("failed to get sclk_fimd0 clock\n");
+		return ;
+	}
+	clk_set_parent(mount_fimd0,mout_mpll_user_t);
+	
+	ret = clk_set_rate(mount_fimd0,800000000);
+	if(ret){
+		pr_info("failed to clock set rate\n");	
+		return ;
+	}
+	pr_info("%s %s %d\n",__FILE__,__FUNCTION__,__LINE__);
+	ret = clk_set_rate(sclk_fimd0,800000000);
+	if(ret){
+		pr_info("failed to clock set rate\n");	
+		return ;
+	}
+
+	pr_info("mout_mpll_user_t = %ld mount_fimd0 = %ld sclk_fimd0 = %ld\n",clk_get_rate(mout_mpll_user_t),clk_get_rate(mount_fimd0),clk_get_rate(sclk_fimd0));
+	 /* code end... */
+/*
+		Jc edit
+*/
 }
 
 

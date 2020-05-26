@@ -111,10 +111,29 @@
 			system-clock-frequency = <11289600>;
 		};
 	};
-
+/*
 	beep {
 		compatible = "pwm-beeper";
 		pwms = <&pwm 0 4000000 PWM_POLARITY_INVERTED>;
+	};
+*/
+	/* 供电 */
+	powerctrl{
+		compatible = "powerctrl-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&power_ctrl>,<&lcd_ctrl>;
+		gpios = <&gpl0 4 0>,<&gpl1 0 0>,<&gpd0 1 0>,<&gpl0 2 0>;
+		usb-ctl =  <&gpm2 4 0>,<&gpm3 3 0>;
+		me3630-ctl =  <&gpc0 4 0>,<&gpz 6 0>;
+	};
+	/* LCD设备 */
+	lcd_4_3@11C00000 {
+		compatible = "itop4412, lcd_4_3";
+		reg = <0x11C00000 0x20c0 0x10010210 0x08 0x10023c80 0x04 0x1003c000 0x1000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_4_3>;
+		clocks = <&clock CLK_FIMD0 &clock CLK_ACLK160>;
+		clock-names = "fimd0","aclk160";
 	};
 };
 
@@ -532,6 +551,19 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+&pinctrl_0 {
+    lcd_4_3:lcd {
+        samsung,pins = "gpf0-0", "gpf0-1", "gpf0-2", "gpf0-3", "gpf0-4",
+        "gpf0-5", "gpf0-6","gpf0-7", "gpf1-0", "gpf1-1",
+        "gpf1-2", "gpf1-3", "gpf1-4", "gpf1-5", "gpf1-6",
+        "gpf1-7", "gpf2-0", "gpf2-1", "gpf2-2", "gpf2-3", 
+        "gpf2-4", "gpf2-5", "gpf2-6","gpf2-7", "gpf3-0",
+        "gpf3-1", "gpf3-2", "gpf3-3";
+        samsung,pin-function = <2>;
+        samsung,pin-pud = <0>;
+        samsung,pin-drv = <0>;
+    };
+};
 
 &pinctrl_1 {
 	ether-reset {
@@ -539,6 +571,13 @@
 		samsung,pin-function = <EXYNOS_PIN_FUNC_INPUT>;
 		samsung,pin-pud = <EXYNOS_PIN_PULL_NONE>;
 		samsung,pin-drv = <EXYNOS4_PIN_DRV_LV1>;
+	};
+
+	power_ctrl:power_ctrl{
+	samsung,pins = "gpl0-4","gpl1-0","gpl0-2";
+	samsung,pin-function = <EXYNOS_PIN_FUNC_OUTPUT>;
+	samsung,pin-pud = <EXYNOS_PIN_PULL_NONE>;
+	samsung,pin-drv = <EXYNOS4_PIN_DRV_LV1>;
 	};
 };
 
