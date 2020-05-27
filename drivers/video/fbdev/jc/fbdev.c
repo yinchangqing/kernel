@@ -28,11 +28,12 @@
 #define         VIDTCON1                0x14
 #define         VIDTCON2                0x18
 #define         WINCON0                 0x20
+#define         VIDOSD0A                0x40
+#define         VIDOSD0B                0x44
 #define         VIDOSD0C                0x48
 #define         SHADOWCON               0x34
 #define         WINCHMAP2               0x3c
-#define         VIDOSD0A                0x40
-#define         VIDOSD0B                0x44
+
 #define         VIDW00ADD0B0    0xA0
 #define         VIDW00ADD1B0    0xD0
 
@@ -100,13 +101,14 @@ static int s3c_lcdfb_setcolreg(unsigned int regno, unsigned int red,
 
 static int lcd_probe(struct platform_device *pdev)
 {
+    printk("----------------- LCD DEVICE Probe -----------------\n");
     int ret;
     unsigned int temp;
 
-        /* 1. 分配一个fb_info */
+    /* 1. 分配一个fb_info */
     s3c_lcd = framebuffer_alloc(0, NULL);
 
-         /* 2. 设置 */
+    /* 2. 设置 */
     /* 2.1 设置 fix 固定的参数 */
     strcpy(s3c_lcd->fix.id, "lcd4_3");
     s3c_lcd->fix.smem_len = LCD_LENTH * LCD_WIDTH * BITS_PER_PIXEL / 8;     //显存的长度
@@ -120,6 +122,7 @@ static int lcd_probe(struct platform_device *pdev)
     s3c_lcd->var.yres_virtual   = LCD_WIDTH;                    //y方向虚拟分辨率
     s3c_lcd->var.bits_per_pixel = BITS_PER_PIXEL;               //每个像素占的bit
     /* RGB:565 */
+
     s3c_lcd->var.red.length     = 5;
     s3c_lcd->var.red.offset     = 11;       //红
     s3c_lcd->var.green.length   = 6;
@@ -127,14 +130,14 @@ static int lcd_probe(struct platform_device *pdev)
     s3c_lcd->var.blue.length    = 5;
     s3c_lcd->var.blue.offset    = 0;    //蓝
     s3c_lcd->var.activate       = FB_ACTIVATE_NOW;
-        /* 2.3 设置操作函数 */
+    /* 2.3 设置操作函数 */
     s3c_lcd->fbops              = &s3c_lcdfb_ops;
 
-        /* 2.4 其他的设置 */
+    /* 2.4 其他的设置 */
     s3c_lcd->pseudo_palette     = pseudo_palette;               //调色板
     s3c_lcd->screen_size        = LCD_LENTH * LCD_WIDTH * BITS_PER_PIXEL / 8;   //显存大小
 
-        /* 3. 硬件相关的操作 */
+    /* 3. 硬件相关的操作 */
     /* 3.1 配置GPIO用于LCD */
     //设备树中使用"default"
     /* 3.2 根据LCD手册设置LCD控制器, 比如VCLK的频率等 */
@@ -218,20 +221,23 @@ static int lcd_probe(struct platform_device *pdev)
     temp |= 1 << 0;
     writel(temp, lcdblk_regs_base + LCDBLK_CFG2);
     mdelay(1000);
-    //分频      800/(85 +1 ) == 8.3M
+    //分频      800/(80 +1 ) == 8.3M
     temp = readl(lcd_regs_base + VIDCON0);
-    temp |= (88 << 6);
+    temp |= (80 << 6);
+    // printk("VIDCON1 ---> 0x%x",readl(lcd_regs_base + VIDCON0));
     writel(temp, lcd_regs_base + VIDCON0);
+    // printk("VIDCON1 ---> 0x%x",readl(lcd_regs_base + VIDCON0));
     /*
      * VIDTCON1:
-     * [5]:IVSYNC  ===> 1 : Inverted(反转)
-     * [6]:IHSYNC  ===> 1 : Inverted(反转)
-     * [7]:IVCLK   ===> 1 : Fetches video data at VCLK rising edge (下降沿触发)
-     * [10:9]:FIXVCLK  ====> 01 : VCLK running
+     * [5]:IVSYNC  ===> 1 : Inverted(反转)  --> set 0
+     * [6]:IHSYNC  ===> 1 : Inverted(反转)  --> set 0
+     * [7]:IVCLK   ===> 1 : Fetches video data at VCLK rising edge (下降沿触发) --> set 0
+     * [10:9]:FIXVCLK  ====> 01 : VCLK running  --> set 0
      */
-    temp = readl(lcd_regs_base + VIDCON1);
-    temp |= (1 << 9) | (1 << 7) | (1 << 5) | (1 << 6);
+
+    temp= (1<<9);
     writel(temp, lcd_regs_base + VIDCON1);
+    // printk("VIDCON1 ---> 0x%x",readl(lcd_regs_base + VIDCON1));
     /*
      * VIDTCON0:
      * [23:16]:  VBPD + 1  <------> tvpw (1 - 20)  13
@@ -241,7 +247,7 @@ static int lcd_probe(struct platform_device *pdev)
     temp = readl(lcd_regs_base + VIDTCON0);
     temp |= (2 << 16) | (2 << 8) | (10);
     writel(temp, lcd_regs_base + VIDTCON0);
-    printk("VIDTCON0 ---->  0%x",temp);
+    // printk("VIDTCON0 ---->  0%x",temp);
     /*
      * VIDTCON1:
      * [23:16]:  HBPD + 1  <------> thpw (1 - 40)  36
@@ -251,7 +257,7 @@ static int lcd_probe(struct platform_device *pdev)
     temp = readl(lcd_regs_base + VIDTCON1);
     temp |= (2 << 16) | (2 << 8)  | (41);
     writel(temp, lcd_regs_base + VIDTCON1);
-    printk("VIDTCON1 ---->  0%x",temp);
+    // printk("VIDTCON1 ---->  0%x",temp);
     /*
      * HOZVAL = (Horizontal display size) - 1 and LINEVAL = (Vertical display size) - 1.
      * Horizontal(水平) display size : 800
@@ -262,19 +268,20 @@ static int lcd_probe(struct platform_device *pdev)
     /*
      * WINCON0:
      * [16]:Specifies Half-Word swap control bit.  1 = Enables swap P1779 低位像素存放在低字节
-     * [5:2]: Selects Bits Per Pixel (BPP) mode for Window image : 0101 ===> 16BPP RGB565
+     * [5:2]: Selects Bits Per Pixel (BPP) mode for Window image : 0101 ===> 16BPP RGB565 
      * [1]:Enables/disables video output   1 = Enables
      */
     temp = readl(lcd_regs_base + WINCON0);
-        temp &= ~(0xf << 2);
-    temp |= (1 << 15) | (0x5 << 2) | 1;
+    temp &= ~(0xf << 2);// clear BPPMODE
+    temp |= (1 << 15) | (5 << 2) | 1;
     writel(temp, lcd_regs_base + WINCON0);
     //Window Size For example, Height ? Width (number of word)
-    temp = (LCD_LENTH * LCD_WIDTH) >> 1;
+    temp = (LCD_LENTH * LCD_WIDTH);
     writel(temp, lcd_regs_base + VIDOSD0C);
+
     temp = readl(lcd_regs_base + SHADOWCON);
     writel(temp | 0x01, lcd_regs_base + SHADOWCON);
-    //p1769
+#if 0
     temp = readl(lcd_regs_base + WINCHMAP2);
     temp &= ~(7 << 16);
     temp |= 1 << 16;
@@ -285,6 +292,7 @@ static int lcd_probe(struct platform_device *pdev)
      * bit0-10 : 指定OSD图像左上像素的垂直屏幕坐标
      * bit11-21: 指定OSD图像左上像素的水平屏幕坐标
      */
+#endif
     writel(0, lcd_regs_base + VIDOSD0A);
     /*
      * bit0-10 : 指定OSD图像右下像素的垂直屏幕坐标
@@ -295,16 +303,16 @@ static int lcd_probe(struct platform_device *pdev)
     temp = readl(lcd_regs_base + VIDCON0);
     writel(temp | 0x03, lcd_regs_base + VIDCON0);
 
-        /* 3.3 分配显存(framebuffer), 并把地址告诉LCD控制器 */
-        // s3c_lcd->screen_base         显存虚拟地址
-        // s3c_lcd->fix.smem_len        显存大小，前面计算的
-        // s3c_lcd->fix.smem_start      显存物理地址
-        s3c_lcd->screen_base = dma_alloc_writecombine(NULL, s3c_lcd->fix.smem_len, (dma_addr_t *)&s3c_lcd->fix.smem_start, GFP_KERNEL);
+    /* 3.3 分配显存(framebuffer), 并把地址告诉LCD控制器 */
+    // s3c_lcd->screen_base         显存虚拟地址
+    // s3c_lcd->fix.smem_len        显存大小，前面计算的
+    // s3c_lcd->fix.smem_start      显存物理地址
+    s3c_lcd->screen_base = dma_alloc_writecombine(NULL, s3c_lcd->fix.smem_len, (dma_addr_t *)&s3c_lcd->fix.smem_start, GFP_KERNEL);
 
-        //显存起始地址
-        writel(s3c_lcd->fix.smem_start, lcd_regs_base + VIDW00ADD0B0);
-        //显存结束地址
-        writel(s3c_lcd->fix.smem_start + s3c_lcd->fix.smem_len, lcd_regs_base + VIDW00ADD1B0);
+    //显存起始地址
+    writel(s3c_lcd->fix.smem_start, lcd_regs_base + VIDW00ADD0B0);
+    //显存结束地址
+    writel(s3c_lcd->fix.smem_start + s3c_lcd->fix.smem_len, lcd_regs_base + VIDW00ADD1B0);
 
     /* 4. 注册 */
     ret = register_framebuffer(s3c_lcd);
