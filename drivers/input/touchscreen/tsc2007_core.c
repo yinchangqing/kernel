@@ -29,7 +29,6 @@
 #include <linux/of_gpio.h>
 #include <linux/platform_data/tsc2007.h>
 #include "tsc2007.h"
-
 int tsc2007_xfer(struct tsc2007 *tsc, u8 cmd)
 {
 	s32 data;
@@ -177,7 +176,6 @@ static irqreturn_t tsc2007_soft_irq(int irq, void *handle)
 static irqreturn_t tsc2007_hard_irq(int irq, void *handle)
 {
 	struct tsc2007 *ts = handle;
-
 	if (tsc2007_is_pen_down(ts))
 		return IRQ_WAKE_THREAD;
 
@@ -423,7 +421,6 @@ static int tsc2007_probe(struct i2c_client *client,
 			"Failed to register with IIO: %d\n", err);
 		return err;
 	}
-
 	return 0;
 }
 

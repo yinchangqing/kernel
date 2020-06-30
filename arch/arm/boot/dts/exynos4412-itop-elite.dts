@@ -546,6 +546,29 @@
 	};
 };
 
+&i2c_7 {
+        samsung,i2c-sda-delay = <100>;
+        samsung,i2c-slave-addr = <0x10>;
+        samsung,i2c-max-bus-freq = <40000>;
+        pinctrl-0 = <&i2c7_bus>;
+        pinctrl-names = "default";
+        status = "okay";
+
+		tsc2007: tsc2007@38 {
+					compatible = "ti,tsc2007";
+					reg = <0x48>;
+					interrupt-parent = <&gpx0>;
+					interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&tsc2007_irq>;//<&ft5x06_rst>,
+					// reset-gpios = <&gpc0 2 0>;
+					gpios = <&gpx0 0 GPIO_ACTIVE_LOW>;
+					ti,x-plate-ohms = <180>;
+					status = "okay";
+        };
+
+};
+
 &i2s0 {
 	pinctrl-0 = <&i2s0_bus>;
 	pinctrl-names = "default";
@@ -578,6 +601,12 @@
 	samsung,pin-function = <EXYNOS_PIN_FUNC_OUTPUT>;
 	samsung,pin-pud = <EXYNOS_PIN_PULL_NONE>;
 	samsung,pin-drv = <EXYNOS4_PIN_DRV_LV1>;
+	};
+	tsc2007_irq: tsc2007_irq{
+		samsung,pins = "gpx0-0";
+		samsung,pin-function = <EXYNOS_PIN_FUNC_INPUT>;
+		samsung,pin-pud = <EXYNOS_PIN_PULL_NONE>;
+		samsung,pin-drv = <EXYNOS4_PIN_DRV_LV1>;
 	};
 };
 
