@@ -22,28 +22,31 @@
 #include <linux/fb.h>
 #include <asm/types.h>
 
-#define         VIDCON0                 0x00
-#define         VIDCON1                 0x04
-#define         VIDTCON0                0x10
-#define         VIDTCON1                0x14
-#define         VIDTCON2                0x18
-#define         WINCON0                 0x20
-#define         VIDOSD0A                0x40
-#define         VIDOSD0B                0x44
-#define         VIDOSD0C                0x48
-#define         SHADOWCON               0x34
-#define         WINCHMAP2               0x3c
+#define         VIDCON0                 0x00//视频寄存器0
+#define         VIDCON1                 0x04//视频寄存器1
+#define         VIDCON2                 0x08//视频寄存器2
+#define         VIDCON3                 0x0c//视频寄存器3
+#define         VIDTCON0                0x10//LCD时序控制寄存器0
+#define         VIDTCON1                0x14//LCD时序控制寄存器1
+#define         VIDTCON2                0x18//LCD时序控制寄存器2
+#define         VIDTCON3                0x1c//LCD时序控制寄存器3
+#define         WINCON0                 0x20//窗口控制寄存器0
+#define         SHADOWCON               0x34//阴影控制寄存器
+#define         WINCHMAP2               0x3c//窗口和通道映射寄存器
+#define         VIDOSD0A                0x40//窗口0位置控制寄存器
+#define         VIDOSD0B                0x44//窗口0位置控制寄存器
+#define         VIDOSD0C                0x48//窗口0大小控制寄存器
 
-#define         VIDW00ADD0B0    0xA0
-#define         VIDW00ADD1B0    0xD0
+#define         VIDW00ADD0B0    0xA0//指定窗口起始地址寄存器
+#define         VIDW00ADD1B0    0xD0//指定窗口借宿地址寄存器
 
-#define         CLK_SRC_LCD0            0x234
-#define         CLK_SRC_MASK_LCD        0x334
-#define         CLK_DIV_LCD                     0x534
-#define         CLK_GATE_IP_LCD         0x934
+#define         CLK_SRC_LCD0            0x234//时钟源配置寄存器偏移
+#define         CLK_SRC_MASK_LCD        0x334//时钟复用器输出掩码，掩着就不输出
+#define         CLK_DIV_LCD             0x534//FIMD时钟分频
+#define         CLK_GATE_IP_LCD         0x934//时钟输出掩码
 
-#define         LCDBLK_CFG                      0x00
-#define         LCDBLK_CFG2                     0x04
+#define         LCDBLK_CFG                      0x00//系统控制LCD寄存器偏移，配置RGB接口或80接口等
+#define         LCDBLK_CFG2                     0x04//PWM配置
 
 #define         LCD_LENTH                       480
 #define         LCD_WIDTH                       272
@@ -124,7 +127,7 @@ static int lcd_probe(struct platform_device *pdev)
     /* RGB:565 */
 
     s3c_lcd->var.red.length     = 5;
-    s3c_lcd->var.red.offset     = 11;       //红
+    s3c_lcd->var.red.offset     = 11;   //红
     s3c_lcd->var.green.length   = 6;
     s3c_lcd->var.green.offset   = 5;    //绿
     s3c_lcd->var.blue.length    = 5;
@@ -142,12 +145,15 @@ static int lcd_probe(struct platform_device *pdev)
     //设备树中使用"default"
     /* 3.2 根据LCD手册设置LCD控制器, 比如VCLK的频率等 */
     //寄存器映射
+    
+    //LCD控制寄存器基地址0x11C00000，映射大小0x20c0，配置LCD参数用的
     res1 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
     if (res1 == NULL)
     {
         printk("platform_get_resource error\n");
         return -EINVAL;
     }
+    
     lcd_regs_base = devm_ioremap_resource(&pdev->dev, res1);
     if (lcd_regs_base == NULL)
     {
@@ -155,12 +161,14 @@ static int lcd_probe(struct platform_device *pdev)
         return -EINVAL;
     }
 
+    //SYSREG控制寄存器基地址0x10010210，映射大小0x08，控制显示控制器用的
     res2 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
     if (res2 == NULL)
     {
         printk("platform_get_resource error\n");
         return -EINVAL;
     }
+    
     lcdblk_regs_base = devm_ioremap_resource(&pdev->dev, res2);
     if (lcdblk_regs_base == NULL)
     {
@@ -168,20 +176,24 @@ static int lcd_probe(struct platform_device *pdev)
         return -EINVAL;
     }
 
+    //配置LCD的供电模式寄存器，基地址0x10023c80，映射大小0x04，控制显示控制器供电
     res3 = platform_get_resource(pdev, IORESOURCE_MEM, 2);
     if (res3 == NULL)
     {
         printk("platform_get_resource error\n");
         return -EINVAL;
     }
-        lcd0_configuration = ioremap(res3->start, 0x04);    
-        if (lcd0_configuration == NULL)
+
+    lcd0_configuration = ioremap(res3->start, 0x04);    
+    if (lcd0_configuration == NULL)
     {
         printk("devm_ioremap_resource error\n");
         return -EINVAL;
     }
-        *(unsigned long *)lcd0_configuration = 7;
+    //配置供电为使能
+    *(unsigned long *)lcd0_configuration = 7;
 
+    //配置FIMD时钟源选择，基地址0x1003c000，映射大小0x1000，控制时钟
     res4 = platform_get_resource(pdev, IORESOURCE_MEM, 3);
     if (res3 == NULL)
     {
@@ -189,7 +201,7 @@ static int lcd_probe(struct platform_device *pdev)
         return -EINVAL;
     }
     clk_regs_base = ioremap(res4->start, 0x1000);
-        if (clk_regs_base == NULL)
+    if (clk_regs_base == NULL)
     {
         printk("devm_ioremap_resource error\n");
         return -EINVAL;
@@ -198,83 +210,98 @@ static int lcd_probe(struct platform_device *pdev)
     //使能时钟
     //时钟源选择 0110  SCLKMPLL_USER_T 800M
     temp = readl(clk_regs_base + CLK_SRC_LCD0);
-    temp &= ~0x0f;
-    temp |= 0x06;
+    temp &= ~(0x0f);//清空FIMD0_SEL寄存器
+    temp |= 0x06;//选择SCLKMPLL_USER_T作为时钟源
     writel(temp, clk_regs_base + CLK_SRC_LCD0);
-    //FIMD0_MASK
+
+    //FIMD0_MASK 配置FIMD0_MASK为UMASK
     temp = readl(clk_regs_base + CLK_SRC_MASK_LCD);
     temp |= 0x01;
     writel(temp, clk_regs_base + CLK_SRC_MASK_LCD);
-    //SCLK_FIMD0 = MOUTFIMD0/(FIMD0_RATIO + 1),分频 1/1
+
+    //SCLK_FIMD0 = MOUTFIMD0/(FIMD0_RATIO + 1),分频为1 800Mhz
     temp = readl(clk_regs_base + CLK_DIV_LCD);
-    temp &= ~0x0f;
+    temp &= ~(0x0f);
     writel(temp, clk_regs_base + CLK_DIV_LCD);
-    //CLK_FIMD0 Pass
+
+    //CLK_FIMD0 门限配置为Pass
     temp = readl(clk_regs_base + CLK_GATE_IP_LCD);
     temp |= 0x01;
     writel(temp, clk_regs_base + CLK_GATE_IP_LCD);
+
     //FIMDBYPASS_LBLK0 FIMD Bypass
     temp = readl(lcdblk_regs_base + LCDBLK_CFG);
-    temp |= 1 << 1;
+    temp &= ~(3<<10);//清空VT_LBLK0，选择为RGB接口模式
+    temp |= (1 << 1);//FIMDPass
     writel(temp, lcdblk_regs_base + LCDBLK_CFG);
+
+    //使能PWM输出控制
     temp = readl(lcdblk_regs_base + LCDBLK_CFG2);
-    temp |= 1 << 0;
+    temp |= (1 << 0);
     writel(temp, lcdblk_regs_base + LCDBLK_CFG2);
     mdelay(1000);
-    //分频      800/(80 +1 ) == 8.3M
+
+    /* 配置LCD参数 */
+    //分频      800/(79 +1 ) == 10M
     temp = readl(lcd_regs_base + VIDCON0);
-    temp |= (80 << 6);
+    temp |= (79 << 6);
     // printk("VIDCON1 ---> 0x%x",readl(lcd_regs_base + VIDCON0));
     writel(temp, lcd_regs_base + VIDCON0);
     // printk("VIDCON1 ---> 0x%x",readl(lcd_regs_base + VIDCON0));
     /*
      * VIDTCON1:
-     * [5]:IVSYNC  ===> 1 : Inverted(反转)  --> set 0
-     * [6]:IHSYNC  ===> 1 : Inverted(反转)  --> set 0
+     * [5]:IVSYNC  ===> 1 : Inverted(反转)  --> set 1
+     * [6]:IHSYNC  ===> 1 : Inverted(反转)  --> set 1  LCD手册与控制器手册不通
      * [7]:IVCLK   ===> 1 : Fetches video data at VCLK rising edge (下降沿触发) --> set 0
      * [10:9]:FIXVCLK  ====> 01 : VCLK running  --> set 0
      */
 
-    temp= (1<<9);
+    temp= (1<<6)| (1<<5);
     writel(temp, lcd_regs_base + VIDCON1);
     // printk("VIDCON1 ---> 0x%x",readl(lcd_regs_base + VIDCON1));
     /*
      * VIDTCON0:
-     * [23:16]:  VBPD + 1  <------> tvpw (1 - 20)  13
-     * [15:8] :  VFPD + 1  <------> tvfp 22
-     * [7:0]  :  VSPW  + 1 <------> tvb - tvpw = 23 - 13 = 10
+     * [23:16]:  VBPD + 1  <------> tvpw
+     * [15:8] :  VFPD + 1  <------> tvfp
+     * [7:0]  :  VSPW  + 1 <------> tvb - tvpw
      */
     temp = readl(lcd_regs_base + VIDTCON0);
-    temp |= (2 << 16) | (2 << 8) | (10);
+    temp |= (1 << 16) | (1 << 8) | (9);
     writel(temp, lcd_regs_base + VIDTCON0);
     // printk("VIDTCON0 ---->  0%x",temp);
     /*
      * VIDTCON1:
-     * [23:16]:  HBPD + 1  <------> thpw (1 - 40)  36
-     * [15:8] :  HFPD + 1  <------> thfp 70
-     * [7:0]  :  HSPW  + 1 <------> thb - thpw = 46 - 36 = 10
+     * [23:16]:  HBPD + 1  <------> thpw 
+     * [15:8] :  HFPD + 1  <------> thfp
+     * [7:0]  :  HSPW  + 1 <------> thb - thpw
      */
     temp = readl(lcd_regs_base + VIDTCON1);
-    temp |= (2 << 16) | (2 << 8)  | (41);
+    temp |= (1 << 16) | (1 << 8)  | (40);
     writel(temp, lcd_regs_base + VIDTCON1);
     // printk("VIDTCON1 ---->  0%x",temp);
     /*
      * HOZVAL = (Horizontal display size) - 1 and LINEVAL = (Vertical display size) - 1.
-     * Horizontal(水平) display size : 800
+     * Horizontal(水平) display size : 272
      * Vertical(垂直) display size : 480
      */
-    temp = ((LCD_WIDTH-1) << 11) | LCD_LENTH;
+    temp = ((LCD_WIDTH-1) << 11) | (LCD_LENTH -1);
     writel(temp, lcd_regs_base + VIDTCON2);
+
+    //Enables VSYNC Signal Output.
+    temp = (1<<31);
+    writel(temp, lcd_regs_base + VIDTCON3);
+
     /*
      * WINCON0:
-     * [16]:Specifies Half-Word swap control bit.  1 = Enables swap P1779 低位像素存放在低字节
+     * [16]:Specifies Half-Word swap control bit. HAWSWP 1 = Enables swap P1779 低位像素存放在低字节
      * [5:2]: Selects Bits Per Pixel (BPP) mode for Window image : 0101 ===> 16BPP RGB565 
      * [1]:Enables/disables video output   1 = Enables
      */
     temp = readl(lcd_regs_base + WINCON0);
     temp &= ~(0xf << 2);// clear BPPMODE
-    temp |= (1 << 15) | (5 << 2) | 1;
+    temp |= (1 << 16) | (5 << 2) | 1;
     writel(temp, lcd_regs_base + WINCON0);
+    
     //Window Size For example, Height ? Width (number of word)
     temp = (LCD_LENTH * LCD_WIDTH);
     writel(temp, lcd_regs_base + VIDOSD0C);
@@ -298,7 +325,8 @@ static int lcd_probe(struct platform_device *pdev)
      * bit0-10 : 指定OSD图像右下像素的垂直屏幕坐标
      * bit11-21: 指定OSD图像右下像素的水平屏幕坐标
      */
-    writel(((LCD_LENTH-1) << 11) | (LCD_WIDTH-1), lcd_regs_base + VIDOSD0B);
+    writel(((LCD_LENTH) << 11) | (LCD_WIDTH), lcd_regs_base + VIDOSD0B);
+    
     //Enables video output and logic immediately
     temp = readl(lcd_regs_base + VIDCON0);
     writel(temp | 0x03, lcd_regs_base + VIDCON0);

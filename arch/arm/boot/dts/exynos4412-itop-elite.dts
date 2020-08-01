@@ -14,6 +14,7 @@
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/sound/samsung-i2s.h>
 #include "exynos4412-itop-scp-core.dtsi"
+#include "/home/jc/study/linux_kernel/linux-4.19.99/include/video/samsung_fimd.h"
 
 / {
 	model = "TOPEET iTop 4412 Elite board based on Exynos4412";
@@ -136,6 +137,29 @@
 		clock-names = "fimd0","aclk160";
 	};
 };
+/* Modify by Jc at 2020/7/31 */
+// &fimd {
+//         pinctrl-0 = <&lcd_clk &lcd_data16 &pwm1_out>;
+//         pinctrl-names = "default";
+//         samsung,invert-vclk;     //vclk翻转
+//         status = "okay";
+ 
+//         display-timings {
+//                 native-mode = <&timing0>;
+//                 timing0: timing {
+//                         pixelclk-active = <1>;
+//                         clock-frequency = <10000000>;
+//                         hactive = <480>;
+//                         vactive = <272>;
+//                         hfront-porch = <1>;
+//                         hback-porch = <1>;
+//                         hsync-len = <40>;
+//                         vback-porch = <1>;
+//                         vfront-porch = <1>;
+//                         vsync-len = <9>;
+//                 };
+//         };
+// };
 
 &adc {
 	vdd-supply = <&ldo3_reg>;
@@ -574,6 +598,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
 &pinctrl_0 {
     lcd_4_3:lcd {
         samsung,pins = "gpf0-0", "gpf0-1", "gpf0-2", "gpf0-3", "gpf0-4",

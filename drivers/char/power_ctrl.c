@@ -135,7 +135,7 @@ static int power_probe(struct platform_device *pdev)
 
 	gpio_direction_output(LVDS_GPIO, 1);
 
-	
+#if 1
 	PWM_GPIO = of_get_named_gpio(np, "gpios", 2);
 	if (PWM_GPIO == -EPROBE_DEFER)
                 return PWM_GPIO;
@@ -151,7 +151,7 @@ static int power_probe(struct platform_device *pdev)
         }
 
 	gpio_direction_output(PWM_GPIO, 1);
-
+#endif
 	TP_GPIO = of_get_named_gpio(np, "gpios", 3);
 	if (TP_GPIO == -EPROBE_DEFER)
                 return TP_GPIO;
