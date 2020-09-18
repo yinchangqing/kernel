@@ -14,7 +14,7 @@
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/sound/samsung-i2s.h>
 #include "exynos4412-itop-scp-core.dtsi"
-#include "/home/jc/study/linux_kernel/linux-4.19.99/include/video/samsung_fimd.h"
+#include <dt-bindings/video/samsung_fimd.h>
 
 / {
 	model = "TOPEET iTop 4412 Elite board based on Exynos4412";
